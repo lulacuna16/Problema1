@@ -43,5 +43,8 @@ Batman = {
     }
 
 pregunta = input("Ingrese pregunta")
-print(validarBatman(pregunta.split()))
+try:
+    print(validarBatman(pregunta.split()))
+except KeyError:
+            print("No")
 
