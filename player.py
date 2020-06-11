@@ -9,5 +9,7 @@ buffer_size = 1024
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
     TCPClientSocket.connect((HOST, PORT))
-    numJ=int(input("Comenzar partida?\n1.Si\t2.No, esperar mas jugadores\n"))#El jugador decide si comenzar o esperar a que se conecten mas jugadores
-    TCPClientSocket.sendall(numJ.to_bytes(2,'big'))
+    numJ = int.from_bytes(TCPClientSocket.recv(buffer_size), 'big')
+    print("Jugador {}".format(numJ)) #Recibe el numero de jugador que correspones
+    Jugadores = int.from_bytes(TCPClientSocket.recv(buffer_size), 'big')
+    print("Jugadores conectados: {}".format(Jugadores)) #Muestra todos los jugadores que van a participar
