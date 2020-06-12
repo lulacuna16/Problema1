@@ -1,18 +1,49 @@
 # !/usr/bin/env python3
 
 import socket
-import sys
+from random import randint
 import threading
 import time
 import os
 import random
 import json
 
-host="127.0.0.1"
+host="192.168.1.64"
 port=65432
 numConn=3
 buffer_size = 1024
+personaje=""
+personajeC=""
+################################################################
+#Nombres de los personajes en ingles para que sea facil reconocerlos
+personajes=['batman', 'superman', 'wonder woman', 'flash', 'green lantern', 'lex luthor', 'catwoman', 'joker', 'harley quinn', 'poison ivy']
+#Caracteristicas de cada personaje
+personajesC= [ # Arreglo bidimiensional
+    ["heroe","rico","capa","negro","sabe pelear","hombre","inteligente","batman"],
+    ["heroe","vuela","super fuerza","visión laser","hombre","capa","veloz","superman"],
+    ["heroe","vuela","mujer","cabello largo","super fuerza","lazo","wonder womam"],
+    ["heroe","veloz","hombre","rojo","agil","flash"],
+    ["heroe","super fuerte","verde","vuela","hombre","green lantern"],
+    ["villano","rico","hombre","inteligente","calvo","lex luthor"],
+    ["villano","mujer","negro","sabe pelear","catwoman"],
+    ["villano","hombre","inteligente","payaso","joker"],
+    ["villano","mujer","cabello largo","sabe pelear","payaso","agil","harley quinn"],
+    ["villano","mujer","cabello largo","agil","verde","poison ivy"]
+]
 
+#VERIFICAR QUE LA CADENA DICHA POR EL USUARIO SEA VALIDA
+"""
+for i in Caracteristicas de personaje elegido:  
+    cont=0
+    if(Cadena que manda el usuario.find(i)!=-1): #Si es diferente de -1, signifca que es correcta
+        return "Si"
+        break;
+    cont+=1
+    elif cont==len(caracteristicas): si ya recorrió todas las característica y no la encontro,regresa un NO de respuesta
+        return "No"
+        break
+"""
+#######################################################################
 global NumPlayers #Es una variable global que servira de referencia a todos los clientes que se generarán
 NumPlayers = 0
 
@@ -57,7 +88,12 @@ def servirPorSiempre(socketTcp, listaconexiones):
                 break
         print("SALIENDO DE SERVIR POR SIEMPRE")
         #COMENZAR PLANIFICACION DE TURNOS
-        while True: #Bucle infinito, se recorre la lista de semaforos infinitamente
+        #Cuando estan todos los jugadores, se elige un personaje al azar junto con sus caracteristicas
+        eleccion=randint(0,len(personajes)-1)
+        personaje=personajes[eleccion]
+        personajeC=personajesC[eleccion]
+        print("Elegi al personaje {} con caracteristicas({})".format(personaje,personajeC))
+        while True: #Bucle infinito, se   recorre la lista de semaforos infinitamente
             for sem in listaSemaforos:
                 sem.release() #Se liberan los semaforos en la lista uno por uno, el primero es el del host
                 with condSem:
@@ -70,10 +106,10 @@ def gestion_conexiones(listaconexiones):
     for conn in listaconexiones:
         if conn.fileno() == -1:
             listaconexiones.remove(conn)
-    print("hilos activos:", threading.active_count())
-    print("enum", threading.enumerate())
-    print("conexiones: ", len(listaconexiones))
-    print(listaconexiones)
+    print("\nhilos activos:{}\n".format(threading.active_count()))
+    #print("enum", threading.enumerate())
+    #print("conexiones: ", len(listaconexiones))
+    #print(listaconexiones)
   
 def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,listaSemaforos,condSem):
     #Codigo del jugador host
@@ -81,7 +117,7 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
     PlayerPoints = 0
     try:
         cur_thread = threading.current_thread()
-        print("Recibiendo datos del cliente {} en el {}".format(Client_addr, cur_thread.name))
+        #print("Recibiendo datos del cliente {} en el {}\n".format(Client_addr, cur_thread.name))
         
         print("Conectado a", Client_addr)        
         data = Client_conn.recv(buffer_size)

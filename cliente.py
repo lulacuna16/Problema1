@@ -7,7 +7,7 @@ import os
 import sys
 import json
 
-HOST = "127.0.0.1"  # The server's hostname or IP address
+HOST = "192.168.1.64"  # The server's hostname or IP address
 PORT = 65432  # The port used by the server
 buffer_size = 1024
 
