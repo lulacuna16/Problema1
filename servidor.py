@@ -114,6 +114,7 @@ def gestion_conexiones(listaconexiones):
     #print(listaconexiones)
 
 def validarPregunta(cadena,listaConexiones,Client_conn):
+    cadena=cadena.lower()
     cont = 0
     for i in personajeC:
         cont+=1
@@ -128,7 +129,7 @@ def validarPregunta(cadena,listaConexiones,Client_conn):
                     j.sendall(mensaje.encode())"""
 
             break
-        elif cont==len(personajeC):
+        elif cont==len(personajeC): # de lo contrario será no
             mensaje = cadena + "\tNo"
             print(mensaje)
             Client_conn.sendall(b'No')
