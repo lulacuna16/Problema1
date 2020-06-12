@@ -6,14 +6,17 @@ import threading
 import time
 import os
 import random
-import json
+import select
+import wave
+import speech_recognition as sr
 
-host="192.168.1.64"
+host="localhost"
 port=65432
 numConn=3
 buffer_size = 1024
 personaje=""
 personajeC=""
+r = sr.Recognizer()
 ################################################################
 #Nombres de los personajes en ingles para que sea facil reconocerlos
 personajes=['batman', 'superman', 'wonder woman', 'flash', 'green lantern', 'lex luthor', 'catwoman', 'joker', 'harley quinn', 'poison ivy']
@@ -62,6 +65,14 @@ Primero inserta el numero de jugadores en el primer cliente y despues corre al o
 Solo funciona con más de 2, hay que ponerle un if  xD
 '''
 ########################################################
+
+def empty_socket(sock):
+    """remove the data present on the socket"""
+    input = [sock]
+    while 1:
+        inputready, o, e = select.select(input,[],[], 0.0)
+        if len(inputready)==0: break
+        for s in inputready: s.recv(1)
 
 def servirPorSiempre(socketTcp, listaconexiones):
     global NumPlayers
@@ -119,9 +130,9 @@ def validarPregunta(cadena,listaConexiones,Client_conn):
     for i in personajeC:
         cont+=1
         if(cadena.find(i)!=-1): #Si encuentra alguna característica en la cadena del usuario, entonces la respuesta será si
-            mensaje=cadena+"\tSi"
+            mensaje="Usted dijo: "+cadena+",\nR:Si"
             print(mensaje)
-            Client_conn.sendall(b'Si')
+            Client_conn.sendall(mensaje.encode())
             """for j in listaConexiones: #Devolver la pregunta y respuesta a todos los jugadores
                 if j==Client_conn:
                     j.sendall(b'Si') #Si se trata del jugador que hizo la pregunta, solo enviar la respuesta
@@ -130,9 +141,9 @@ def validarPregunta(cadena,listaConexiones,Client_conn):
 
             break
         elif cont==len(personajeC): # de lo contrario será no
-            mensaje = cadena + "\tNo"
+            mensaje ="Usted dijo: "+ cadena + "\nR:No"
             print(mensaje)
-            Client_conn.sendall(b'No')
+            Client_conn.sendall(mensaje.encode())
             """for j in listaConexiones:  # Devolver la pregunta y respuesta a todos los jugadores
                 if j != Client_conn:
                     j.sendall(b'No')  # Si se trata del jugador que hizo la pregunta, solo enviar la respuesta
@@ -172,16 +183,33 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
 
         while True:
             semaforo.acquire() # El host adquiere el semaforo
-    
+            empty_socket(Client_conn)
             Client_conn.sendall(b" ")
             #print("Esperando a recibir datos... ")
             data = Client_conn.recv(buffer_size) #Recibe mensaje que envia el cliente
-            validarPregunta(data.decode(), listaConexiones, Client_conn)
+            tamAud=int(data.decode())
+            print(tamAud)
+            i=0
+            with open("Raudio.wav", 'wb') as f:
+                while i<tamAud:
+                    l = Client_conn.recv(buffer_size)
+                    f.write(l)
+                    i+=len(l)
+            print(i)
+            
+            print("Terminando de recibir archivo")
+            empty_socket(Client_conn)
+            fileAudio = sr.AudioFile("audio.wav")
+            with fileAudio as source:
+                audio = r.record(source)
+                
+            cadena = r.recognize_google(audio,language="es")
+            print(cadena)
+            validarPregunta(cadena.lower(), listaConexiones, Client_conn)
 
             if not data:
                 break
-
-            #print(data.decode())
+            
             with condSem:
                 condSem.notifyAll() #Indica al planificador de turnos que ya acabo de usar su semaforo y que continue con el proximo
             
@@ -216,25 +244,42 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
         data = Client_conn.recv(buffer_size)
         
         while True:
-            semaforo.acquire() #Adquiere su semaforo
-            
+            semaforo.acquire() # El host adquiere el semaforo
+            empty_socket(Client_conn)
             Client_conn.sendall(b" ")
             #print("Esperando a recibir datos... ")
-            data = Client_conn.recv(buffer_size) #Recibe mensaje del cliente
-            validarPregunta(data.decode(), listaConexiones, Client_conn)
+            
+            data = Client_conn.recv(buffer_size) #Recibe mensaje que envia el cliente
+            tamAud=int(data.decode())
+            print(tamAud)
+            i=0
+            with open("Raudio.wav", 'wb') as f:
+                while i<tamAud:
+                    l = Client_conn.recv(buffer_size)
+                    f.write(l)
+                    i+=len(l)
+            print(i)
+            
+            print("Terminando de recibir archivo")
+            empty_socket(Client_conn)
+            fileAudio = sr.AudioFile("audio.wav")
+            with fileAudio as source:
+                audio = r.record(source)
 
+            cadena = r.recognize_google(audio,language="es")
+            print(cadena)
+            validarPregunta(cadena.lower(), listaConexiones, Client_conn)
+            
             if not data:
                 break
-            #print(data.decode())
             
             with condSem:
-                condSem.notifyAll() #Notifica que su turno ha terminado
+                condSem.notifyAll() #Indica al planificador de turnos que ya acabo de usar su semaforo y que continue con el proximo
         
     except Exception as e:
         print(e)
     finally:
         Client_conn.close()
-
 
 
 listaConexiones = []
