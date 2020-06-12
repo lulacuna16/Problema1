@@ -21,7 +21,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
     if(data.decode() == "JH"): #Código para jugador host
         numPlay = input("Ingrese el número de jugadores: \n")
         TCPClientSocket.sendall(numPlay.encode())
-        data = TCPClientSocket.recv(buffer_size)    #Manda al servidor el número de jugadores
+        data =TCPClientSocket.recv(buffer_size)    #Manda al servidor el número de jugadores
         
         TCPClientSocket.sendall(b" ")
         print("Esperando a otros jugadores...")
@@ -39,5 +39,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
     while True:
         print("Espere su turno: ")
         data = TCPClientSocket.recv(buffer_size)
-        coord=input("Ingrese un mensaje para enviar al servidor ")
+        coord=str(input("Ingrese un mensaje para enviar al servidor "))
         TCPClientSocket.sendall(coord.encode())
+        respuesta = TCPClientSocket.recv(buffer_size)
+        print(respuesta.decode())

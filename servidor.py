@@ -19,16 +19,16 @@ personajeC=""
 personajes=['batman', 'superman', 'wonder woman', 'flash', 'green lantern', 'lex luthor', 'catwoman', 'joker', 'harley quinn', 'poison ivy']
 #Caracteristicas de cada personaje
 personajesC= [ # Arreglo bidimiensional
-    ["heroe","rico","capa","negro","sabe pelear","hombre","inteligente","batman"],
-    ["heroe","vuela","super fuerza","visión laser","hombre","capa","veloz","superman"],
-    ["heroe","vuela","mujer","cabello largo","super fuerza","lazo","wonder womam"],
-    ["heroe","veloz","hombre","rojo","agil","flash"],
-    ["heroe","super fuerte","verde","vuela","hombre","green lantern"],
+    ["heroe","rico","capa","negro","sabe pelear","hombre","cabello","cabello corto","inteligente","batman"],
+    ["heroe","vuela","super fuerza","visión laser","hombre","capa","cabello","cabello corto","veloz","superman"],
+    ["heroe","vuela","mujer","cabello","cabello largo","super fuerza","lazo","wonder womam"],
+    ["heroe","veloz","hombre","rojo","agil","cabello","cabello corto","flash"],
+    ["heroe","super fuerte","verde","vuela","hombre","cabello","cabello corto","green lantern"],
     ["villano","rico","hombre","inteligente","calvo","lex luthor"],
-    ["villano","mujer","negro","sabe pelear","catwoman"],
-    ["villano","hombre","inteligente","payaso","joker"],
-    ["villano","mujer","cabello largo","sabe pelear","payaso","agil","harley quinn"],
-    ["villano","mujer","cabello largo","agil","verde","poison ivy"]
+    ["villano","mujer","negro","sabe pelear","cabello","agil","cabello corto","catwoman"],
+    ["villano","hombre","inteligente","payaso","cabello","joker"],
+    ["villano","mujer","cabello","cabello largo","sabe pelear","payaso","agil","harley quinn"],
+    ["villano","mujer","cabello","cabello largo","agil","verde","poison ivy"]
 ]
 
 #VERIFICAR QUE LA CADENA DICHA POR EL USUARIO SEA VALIDA
@@ -46,6 +46,11 @@ for i in Caracteristicas de personaje elegido:
 #######################################################################
 global NumPlayers #Es una variable global que servira de referencia a todos los clientes que se generarán
 NumPlayers = 0
+eleccion = randint(0, len(personajes) - 1)
+
+personaje = personajes[eleccion]
+
+personajeC = personajesC[eleccion]
 
 #######################################################
 '''
@@ -89,10 +94,7 @@ def servirPorSiempre(socketTcp, listaconexiones):
         print("SALIENDO DE SERVIR POR SIEMPRE")
         #COMENZAR PLANIFICACION DE TURNOS
         #Cuando estan todos los jugadores, se elige un personaje al azar junto con sus caracteristicas
-        eleccion=randint(0,len(personajes)-1)
-        personaje=personajes[eleccion]
-        personajeC=personajesC[eleccion]
-        print("Elegi al personaje {} con caracteristicas({})".format(personaje,personajeC))
+        print("\nElegi al personaje {} con caracteristicas({})\n".format(personaje,personajeC))
         while True: #Bucle infinito, se   recorre la lista de semaforos infinitamente
             for sem in listaSemaforos:
                 sem.release() #Se liberan los semaforos en la lista uno por uno, el primero es el del host
@@ -110,7 +112,34 @@ def gestion_conexiones(listaconexiones):
     #print("enum", threading.enumerate())
     #print("conexiones: ", len(listaconexiones))
     #print(listaconexiones)
-  
+
+def validarPregunta(cadena,listaConexiones,Client_conn):
+    cont = 0
+    for i in personajeC:
+        cont+=1
+        if(cadena.find(i)!=-1): #Si encuentra alguna característica en la cadena del usuario, entonces la respuesta será si
+            mensaje=cadena+"\tSi"
+            print(mensaje)
+            Client_conn.sendall(b'Si')
+            """for j in listaConexiones: #Devolver la pregunta y respuesta a todos los jugadores
+                if j==Client_conn:
+                    j.sendall(b'Si') #Si se trata del jugador que hizo la pregunta, solo enviar la respuesta
+                else:
+                    j.sendall(mensaje.encode())"""
+
+            break
+        elif cont==len(personajeC):
+            mensaje = cadena + "\tNo"
+            print(mensaje)
+            Client_conn.sendall(b'No')
+            """for j in listaConexiones:  # Devolver la pregunta y respuesta a todos los jugadores
+                if j != Client_conn:
+                    j.sendall(b'No')  # Si se trata del jugador que hizo la pregunta, solo enviar la respuesta
+                else:
+                    j.sendall(mensaje.encode())"""
+            break
+
+
 def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,listaSemaforos,condSem):
     #Codigo del jugador host
     global NumPlayers
@@ -146,9 +175,12 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
             Client_conn.sendall(b" ")
             #print("Esperando a recibir datos... ")
             data = Client_conn.recv(buffer_size) #Recibe mensaje que envia el cliente
+            validarPregunta(data.decode(), listaConexiones, Client_conn)
+
             if not data:
                 break
-            print(data.decode())           
+
+            #print(data.decode())
             with condSem:
                 condSem.notifyAll() #Indica al planificador de turnos que ya acabo de usar su semaforo y que continue con el proximo
             
@@ -188,9 +220,11 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
             Client_conn.sendall(b" ")
             #print("Esperando a recibir datos... ")
             data = Client_conn.recv(buffer_size) #Recibe mensaje del cliente
+            validarPregunta(data.decode(), listaConexiones, Client_conn)
+
             if not data:
                 break
-            print(data.decode())
+            #print(data.decode())
             
             with condSem:
                 condSem.notifyAll() #Notifica que su turno ha terminado
