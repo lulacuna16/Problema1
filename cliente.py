@@ -18,36 +18,26 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
     TCPClientSocket.sendall(b" ")
     data = TCPClientSocket.recv(buffer_size)    
     
-    if(data.decode() == "JH"):
+    if(data.decode() == "JH"): #Código para jugador host
         numPlay = input("Ingrese el número de jugadores: \n")
         TCPClientSocket.sendall(numPlay.encode())
-        data = TCPClientSocket.recv(buffer_size)    
+        data = TCPClientSocket.recv(buffer_size)    #Manda al servidor el número de jugadores
         
         TCPClientSocket.sendall(b" ")
         print("Esperando a otros jugadores...")
-        data = TCPClientSocket.recv(buffer_size)    
+        data = TCPClientSocket.recv(buffer_size)    #Espera a que el servidor mande algo para que sepa que ya se ha cumplido la barrera
         TCPClientSocket.sendall(b" ")
-        
-        #print("Esperando una respuesta...")
     
-    #print("Recibido,", repr(data), " de", TCPClientSocket.getpeername())
-    
-    if(data.decode() == "ETC"):
+    if(data.decode() == "ETC"): #Código para otros jugadores
         print("Esperando a otros jugadores...")
         TCPClientSocket.sendall(b" ")
         data = TCPClientSocket.recv(buffer_size)
-        TCPClientSocket.sendall(b" ")
+        TCPClientSocket.sendall(b" ")   #Prácticamente solo sincroniza los enviar y recibir, si no luego hace cosas raras xD
         
         time.sleep(1)
-        #PrintBoard(level,Board)
-    
-    #data =TCPClientSocket.recv(buffer_size)
-    
     
     while True:
-        #TCPClientSocket.sendall(b" ")
         print("Espere su turno: ")
         data = TCPClientSocket.recv(buffer_size)
-        #PrintBoard(level,Board)
-        coord=input("Ingrese las cordenadas de las cartas que desea ver en el formato x1,y1;x2,y2 ")
+        coord=input("Ingrese un mensaje para enviar al servidor ")
         TCPClientSocket.sendall(coord.encode())
