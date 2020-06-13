@@ -10,7 +10,7 @@ import select
 import wave
 import speech_recognition as sr
 
-host="localhost"
+host="192.168.1.64"
 port=65432
 numConn=3
 buffer_size = 1024
@@ -34,18 +34,6 @@ personajesC= [ # Arreglo bidimiensional
     ["villano","mujer","cabello","cabello largo","agil","verde","poison ivy"]
 ]
 
-#VERIFICAR QUE LA CADENA DICHA POR EL USUARIO SEA VALIDA
-"""
-for i in Caracteristicas de personaje elegido:  
-    cont=0
-    if(Cadena que manda el usuario.find(i)!=-1): #Si es diferente de -1, signifca que es correcta
-        return "Si"
-        break;
-    cont+=1
-    elif cont==len(caracteristicas): si ya recorrió todas las característica y no la encontro,regresa un NO de respuesta
-        return "No"
-        break
-"""
 #######################################################################
 global NumPlayers #Es una variable global que servira de referencia a todos los clientes que se generarán
 NumPlayers = 0
@@ -130,25 +118,18 @@ def validarPregunta(cadena,listaConexiones,Client_conn):
     for i in personajeC:
         cont+=1
         if(cadena.find(i)!=-1): #Si encuentra alguna característica en la cadena del usuario, entonces la respuesta será si
-            mensaje="Usted dijo: "+cadena+",\nR:Si"
+            mensaje="Jugador dijo: "+cadena+"?,\nR:Si"
             print(mensaje)
             Client_conn.sendall(mensaje.encode())
             """for j in listaConexiones: #Devolver la pregunta y respuesta a todos los jugadores
-                if j==Client_conn:
-                    j.sendall(b'Si') #Si se trata del jugador que hizo la pregunta, solo enviar la respuesta
-                else:
-                    j.sendall(mensaje.encode())"""
-
+                j.sendall(mensaje.encode())"""
             break
         elif cont==len(personajeC): # de lo contrario será no
-            mensaje ="Usted dijo: "+ cadena + "\nR:No"
+            mensaje ="Jugador dijo: "+ cadena + "?\nR:No"
             print(mensaje)
             Client_conn.sendall(mensaje.encode())
-            """for j in listaConexiones:  # Devolver la pregunta y respuesta a todos los jugadores
-                if j != Client_conn:
-                    j.sendall(b'No')  # Si se trata del jugador que hizo la pregunta, solo enviar la respuesta
-                else:
-                    j.sendall(mensaje.encode())"""
+            """for j in listaConexiones: #Devolver la pregunta y respuesta a todos los jugadores
+                j.sendall(mensaje.encode())"""
             break
 
 
@@ -188,14 +169,14 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
             #print("Esperando a recibir datos... ")
             data = Client_conn.recv(buffer_size) #Recibe mensaje que envia el cliente
             tamAud=int(data.decode())
-            print(tamAud)
+            #print(tamAud)
             i=0
             with open("Raudio.wav", 'wb') as f:
                 while i<tamAud:
                     l = Client_conn.recv(buffer_size)
                     f.write(l)
                     i+=len(l)
-            print(i)
+            #print(i)
             
             print("Terminando de recibir archivo")
             empty_socket(Client_conn)
@@ -204,8 +185,8 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
                 audio = r.record(source)
                 
             cadena = r.recognize_google(audio,language="es")
-            print(cadena)
-            validarPregunta(cadena.lower(), listaConexiones, Client_conn)
+            #print(cadena)
+            validarPregunta(cadena, listaConexiones, Client_conn)
 
             if not data:
                 break
@@ -251,14 +232,14 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
             
             data = Client_conn.recv(buffer_size) #Recibe mensaje que envia el cliente
             tamAud=int(data.decode())
-            print(tamAud)
+            #print(tamAud)
             i=0
             with open("Raudio.wav", 'wb') as f:
                 while i<tamAud:
                     l = Client_conn.recv(buffer_size)
                     f.write(l)
                     i+=len(l)
-            print(i)
+            #print(i)
             
             print("Terminando de recibir archivo")
             empty_socket(Client_conn)
@@ -267,8 +248,8 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
                 audio = r.record(source)
 
             cadena = r.recognize_google(audio,language="es")
-            print(cadena)
-            validarPregunta(cadena.lower(), listaConexiones, Client_conn)
+            #print(cadena)
+            validarPregunta(cadena, listaConexiones, Client_conn)
             
             if not data:
                 break
