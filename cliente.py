@@ -18,7 +18,7 @@ personajes = ['batman', 'superman', 'wonder woman', 'flash', 'green lantern', 'l
 # Caracteristicas de cada personaje
 personajesC = [  # Arreglo bidimiensional
     ["héroe", "rico", "capa", "negro", "sabe pelear", "hombre", "cabello corto", "inteligente", "batman"],
-    ["héroe", "vuela", "super fuerza", "visión laser", "hombre", "capa", "cabello corto", "veloz","superman"],
+    ["héroe", "vuela", "super fuerza", "visión láser", "hombre", "capa", "cabello corto", "veloz","superman"],
     ["héroe", "vuela", "mujer", "cabello largo",  "super fuerza", "lazo","sabe pelear","wonder womam"],
     ["héroe", "veloz", "hombre","sabe pelear", "rojo", "ágil", "cabello corto",  "flash"],
     ["héroe", "super fuerza", "verde", "vuela", "hombre", "cabello corto", "green lantern"],
@@ -127,6 +127,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
         time.sleep(1)
 
     while True:
+        termina=False
         print("Espere su turno: ")
         data = TCPClientSocket.recv(buffer_size)
         verPersonajes()
@@ -144,12 +145,21 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
             print("Terminando de enviar archivo")
             respuesta = TCPClientSocket.recv(buffer_size)
             if respuesta.decode() != '*':
-                print(respuesta.decode())
-                ocultarPersonajes(respuesta[14:-6].decode(), (respuesta[-2:].decode()))
-                break
+                if respuesta.decode().startswith("¡¡Felicidades"):
+                    print(respuesta.decode())
+                    print("Fin de la partida")
+                    termina=True
+                    break
+                else:
+                    print(respuesta.decode())
+                    ocultarPersonajes(respuesta[14:-6].decode(), (respuesta[-2:].decode()))
+                    break
             else:
                 print("No pude capturar nada. Que fue lo que dijiste?\n")
-
+            if termina:
+                break
+        if termina:
+            break
 
                 
            

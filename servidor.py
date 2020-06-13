@@ -23,7 +23,7 @@ personajes=['batman', 'superman', 'wonder woman', 'flash', 'green lantern', 'lex
 #Caracteristicas de cada personaje
 personajesC= [ # Arreglo bidimiensional
     ["héroe", "rico", "capa", "negro", "sabe pelear", "hombre", "cabello corto", "inteligente", "batman"],
-    ["héroe", "vuela", "super fuerza", "visión laser", "hombre", "capa", "cabello corto", "veloz","superman"],
+    ["héroe", "vuela", "super fuerza", "visión láser", "hombre", "capa", "cabello corto", "veloz","superman"],
     ["héroe", "vuela", "mujer", "cabello largo",  "super fuerza", "lazo","sabe pelear","wonder womam"],
     ["héroe", "veloz", "hombre","sabe pelear", "rojo", "ágil", "cabello corto",  "flash"],
     ["héroe", "super fuerza", "verde", "vuela", "hombre", "cabello corto", "green lantern"],
@@ -42,7 +42,8 @@ eleccion = randint(0, len(personajes) - 1)
 personaje = personajes[eleccion]
 
 personajeC = personajesC[eleccion]
-
+ganador=""
+ #Contiene la ip del usuario ganador
 #######################################################
 '''
 El algoritmo tiene 2 tipos de usuarios, como en cualquier juego normal, el que crea la partida (host)
@@ -50,7 +51,6 @@ y los invitados.
 
 Esta versión solo recibe un mensaje del servidor y lo imprime, con el respectivo planificador de turnos
 Primero inserta el numero de jugadores en el primer cliente y despues corre al otro cliente
-Solo funciona con más de 2, hay que ponerle un if  xD
 '''
 ########################################################
 
@@ -112,7 +112,8 @@ def gestion_conexiones(listaconexiones):
     #print("conexiones: ", len(listaconexiones))
     #print(listaconexiones)
 
-def validarPregunta(cadena,listaConexiones,Client_conn):
+def validarPregunta(cadena,listaConexiones,Client_conn,Client_addr):
+    global ganador,personaje
     cadena=cadena.lower()
     cont = 0
     for i in personajeC:
@@ -120,7 +121,12 @@ def validarPregunta(cadena,listaConexiones,Client_conn):
         if(cadena.find(i)!=-1): #Si encuentra alguna característica en la cadena del usuario, entonces la respuesta será si
             mensaje="Jugador dijo: "+cadena+"?\nR:Si"
             print(mensaje)
-            Client_conn.sendall(mensaje.encode())
+            if personaje in cadena:
+                ganador=Client_addr
+                mensaje="¡¡Felicidades, ganaste Jugador {}!!\n".format(ganador)
+                Client_conn.sendall(mensaje.encode())
+            else:
+                Client_conn.sendall(mensaje.encode())
             """for j in listaConexiones: #Devolver la pregunta y respuesta a todos los jugadores
                 j.sendall(mensaje.encode())"""
             break
@@ -169,6 +175,7 @@ def recibirPregunta(Client_conn):
     return response
 
 def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,listaSemaforos,condSem):
+    global ganador
     #Codigo del jugador host
     global NumPlayers
     PlayerPoints = 0
@@ -219,11 +226,13 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
                 break
             
             #print("La cadena es: " + guess["transcription"])
-            validarPregunta(guess["transcription"], listaConexiones, Client_conn)
+            validarPregunta(guess["transcription"], listaConexiones, Client_conn,Client_addr)
             empty_socket(Client_conn)
             if not data:
                 break
-            
+            if len(ganador)>0:
+                print("Ganó Jugador: {}\n".format(ganador))
+                break
             with condSem:
                 condSem.notifyAll() #Indica al planificador de turnos que ya acabo de usar su semaforo y que continue con el proximo
             
@@ -233,6 +242,7 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
         Client_conn.close()
     
 def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semaforo,listaSemaforos,condSem):
+    global ganador
     #Codigo para los otros jugadores, es muy parecido xD
     PlayerPoints = 0
     try:
@@ -279,11 +289,13 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
                 break
             
             #print("La cadena es: " + guess["transcription"])
-            validarPregunta(guess["transcription"], listaConexiones, Client_conn)
+            validarPregunta(guess["transcription"], listaConexiones, Client_conn, Client_addr)
             empty_socket(Client_conn)
             if not data:
                 break
-            
+            if len(ganador)>0:
+                print("Ganó Jugador: {}\n".format(ganador))
+                break
             with condSem:
                 condSem.notifyAll() #Indica al planificador de turnos que ya acabo de usar su semaforo y que continue con el proximo
         
