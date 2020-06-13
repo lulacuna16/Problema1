@@ -114,6 +114,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
                 print(respuesta.decode())
                 break 
             else: 
-                print("Vuelva a grabar")
+                print("No pude capturar nada. Que fue lo que dijiste?\n")
+
                 
            
