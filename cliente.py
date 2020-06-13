@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-HOST = "192.168.1.64"  # The server's hostname or IP address
+HOST = "localhost"  # The server's hostname or IP address
 PORT = 65432  # The port used by the server
 buffer_size = 1024
 
@@ -71,9 +71,7 @@ def GrabarPregunta():
     wf.close()
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
-    TCPClientSocket.connect((HOST, PORT))
-    print("Bienvenido a Memoria")
-    
+    TCPClientSocket.connect((HOST, PORT))    
     TCPClientSocket.sendall(b" ")
     data = TCPClientSocket.recv(buffer_size)
     Jugador=data.decode()
@@ -99,16 +97,23 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
         print("Espere su turno: ")
         data = TCPClientSocket.recv(buffer_size)
         verPersonajes()
-        coord=input("Pulse enter para grabar ")
         #TCPClientSocket.sendall(coord.encode())
         ##########################################
-        GrabarPregunta()
-        TamAud=Path("audio.wav").stat().st_size
-        #print(str(TamAud))
-        TCPClientSocket.sendall(str(TamAud).encode())
-        with open("audio.wav", 'rb') as f:
-          for l in f: 
-            TCPClientSocket.sendall(l)
-        print("Terminando de enviar archivo")
-        respuesta = TCPClientSocket.recv(buffer_size)
-        print(respuesta.decode())
+        while True:
+            coord=input("Pulse enter para grabar ")
+            GrabarPregunta()
+            TamAud=Path("audio.wav").stat().st_size
+            #print(str(TamAud))
+            TCPClientSocket.sendall(str(TamAud).encode())
+            with open("audio.wav", 'rb') as f:
+              for l in f: 
+                TCPClientSocket.sendall(l)
+            print("Terminando de enviar archivo")
+            respuesta = TCPClientSocket.recv(buffer_size)
+            if respuesta.decode() != '*':
+                print(respuesta.decode())
+                break 
+            else: 
+                print("Vuelva a grabar")
+                
+           

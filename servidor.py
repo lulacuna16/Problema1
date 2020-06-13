@@ -10,7 +10,7 @@ import select
 import wave
 import speech_recognition as sr
 
-host="192.168.1.64"
+host="localhost"
 port=65432
 numConn=3
 buffer_size = 1024
@@ -132,6 +132,41 @@ def validarPregunta(cadena,listaConexiones,Client_conn):
                 j.sendall(mensaje.encode())"""
             break
 
+def recibirPregunta(Client_conn):
+    data = Client_conn.recv(buffer_size) #Recibe mensaje que envia el cliente
+    tamAud=int(data.decode())
+    #print(tamAud)
+    i=0
+    with open("Raudio.wav", 'wb') as f:
+        while i<tamAud:
+            l = Client_conn.recv(buffer_size)
+            f.write(l)
+            i+=len(l)
+    #print(i)
+    
+    print("Terminando de recibir archivo")
+    empty_socket(Client_conn)
+    fileAudio = sr.AudioFile("audio.wav")
+    
+    with fileAudio as source:
+        audio = r.record(source)
+        
+    response = {
+        "success": True,
+        "error": None,
+        "transcription": None
+    }
+    print("Empezando reconociemiento")
+    try:
+        response["transcription"] = r.recognize_google(audio,language="es")
+    except sr.RequestError:
+        response["success"] = False
+        response["error"] = "API unavailable"
+    except sr.UnknownValueError:
+        response["error"] = "Unable to recognize speech"
+
+    print("Terminando reconociemiento")
+    return response
 
 def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,listaSemaforos,condSem):
     #Codigo del jugador host
@@ -167,27 +202,25 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
             empty_socket(Client_conn)
             Client_conn.sendall(b" ")
             #print("Esperando a recibir datos... ")
-            data = Client_conn.recv(buffer_size) #Recibe mensaje que envia el cliente
-            tamAud=int(data.decode())
-            #print(tamAud)
-            i=0
-            with open("Raudio.wav", 'wb') as f:
-                while i<tamAud:
-                    l = Client_conn.recv(buffer_size)
-                    f.write(l)
-                    i+=len(l)
-            #print(i)
+            while True:
+                empty_socket(Client_conn)
+                guess = recibirPregunta(Client_conn)
+                if guess["transcription"]:
+                    break
+                if not guess["success"]:
+                    break
+                print("No pude capturar nada. Que fue lo que dijiste?\n")
+                Client_conn.sendall(b"*")
+                empty_socket(Client_conn)
+                empty_socket(Client_conn)
             
-            print("Terminando de recibir archivo")
+            if guess["error"]:
+                print("ERROR: {}".format(guess["error"]))
+                break
+            
+            print("La cadena es: " + guess["transcription"])
+            validarPregunta(guess["transcription"], listaConexiones, Client_conn)
             empty_socket(Client_conn)
-            fileAudio = sr.AudioFile("audio.wav")
-            with fileAudio as source:
-                audio = r.record(source)
-                
-            cadena = r.recognize_google(audio,language="es")
-            #print(cadena)
-            validarPregunta(cadena, listaConexiones, Client_conn)
-
             if not data:
                 break
             
@@ -229,28 +262,25 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
             empty_socket(Client_conn)
             Client_conn.sendall(b" ")
             #print("Esperando a recibir datos... ")
+            while True:
+                empty_socket(Client_conn)
+                guess = recibirPregunta(Client_conn)
+                if guess["transcription"]:
+                    break
+                if not guess["success"]:
+                    break
+                print("No pude capturar nada. Que fue lo que dijiste?\n")
+                Client_conn.sendall(b"*")
+                empty_socket(Client_conn)
+                empty_socket(Client_conn)
             
-            data = Client_conn.recv(buffer_size) #Recibe mensaje que envia el cliente
-            tamAud=int(data.decode())
-            #print(tamAud)
-            i=0
-            with open("Raudio.wav", 'wb') as f:
-                while i<tamAud:
-                    l = Client_conn.recv(buffer_size)
-                    f.write(l)
-                    i+=len(l)
-            #print(i)
+            if guess["error"]:
+                print("ERROR: {}".format(guess["error"]))
+                break
             
-            print("Terminando de recibir archivo")
+            print("La cadena es: " + guess["transcription"])
+            validarPregunta(guess["transcription"], listaConexiones, Client_conn)
             empty_socket(Client_conn)
-            fileAudio = sr.AudioFile("audio.wav")
-            with fileAudio as source:
-                audio = r.record(source)
-
-            cadena = r.recognize_google(audio,language="es")
-            #print(cadena)
-            validarPregunta(cadena, listaConexiones, Client_conn)
-            
             if not data:
                 break
             
