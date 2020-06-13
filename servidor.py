@@ -10,7 +10,7 @@ import select
 import wave
 import speech_recognition as sr
 
-host="localhost"
+host="192.168.1.64"
 port=65432
 numConn=3
 buffer_size = 1024
@@ -22,16 +22,16 @@ r = sr.Recognizer()
 personajes=['batman', 'superman', 'wonder woman', 'flash', 'green lantern', 'lex luthor', 'catwoman', 'joker', 'harley quinn', 'poison ivy']
 #Caracteristicas de cada personaje
 personajesC= [ # Arreglo bidimiensional
-    ["heroe","rico","capa","negro","sabe pelear","hombre","cabello","cabello corto","inteligente","batman"],
-    ["heroe","vuela","super fuerza","visión laser","hombre","capa","cabello","cabello corto","veloz","superman"],
-    ["heroe","vuela","mujer","cabello","cabello largo","super fuerza","lazo","wonder womam"],
-    ["heroe","veloz","hombre","rojo","agil","cabello","cabello corto","flash"],
-    ["heroe","super fuerte","verde","vuela","hombre","cabello","cabello corto","green lantern"],
-    ["villano","rico","hombre","inteligente","calvo","lex luthor"],
-    ["villano","mujer","negro","sabe pelear","cabello","agil","cabello corto","catwoman"],
-    ["villano","hombre","inteligente","payaso","cabello","joker"],
-    ["villano","mujer","cabello","cabello largo","sabe pelear","payaso","agil","harley quinn"],
-    ["villano","mujer","cabello","cabello largo","agil","verde","poison ivy"]
+    ["héroe", "rico", "capa", "negro", "sabe pelear", "hombre", "cabello corto", "inteligente", "batman"],
+    ["héroe", "vuela", "super fuerza", "visión laser", "hombre", "capa", "cabello corto", "veloz","superman"],
+    ["héroe", "vuela", "mujer", "cabello largo",  "super fuerza", "lazo","sabe pelear","wonder womam"],
+    ["héroe", "veloz", "hombre","sabe pelear", "rojo", "ágil", "cabello corto",  "flash"],
+    ["héroe", "super fuerza", "verde", "vuela", "hombre", "cabello corto", "green lantern"],
+    ["villano", "rico", "hombre", "inteligente", "calvo", "verde","lex luthor"],
+    ["villano", "mujer", "negro", "sabe pelear", "cabello corto", "ágil",  "catwoman"],
+    ["villano", "hombre", "inteligente", "payaso", "joker"],
+    ["villano", "mujer", "cabello largo",  "sabe pelear", "payaso", "ágil", "harley quinn"],
+    ["villano", "mujer", "cabello largo", "ágil", "verde", "poison ivy"]
 ]
 
 #######################################################################
@@ -118,7 +118,7 @@ def validarPregunta(cadena,listaConexiones,Client_conn):
     for i in personajeC:
         cont+=1
         if(cadena.find(i)!=-1): #Si encuentra alguna característica en la cadena del usuario, entonces la respuesta será si
-            mensaje="Jugador dijo: "+cadena+"?,\nR:Si"
+            mensaje="Jugador dijo: "+cadena+"?\nR:Si"
             print(mensaje)
             Client_conn.sendall(mensaje.encode())
             """for j in listaConexiones: #Devolver la pregunta y respuesta a todos los jugadores
@@ -218,7 +218,7 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
                 print("ERROR: {}".format(guess["error"]))
                 break
             
-            print("La cadena es: " + guess["transcription"])
+            #print("La cadena es: " + guess["transcription"])
             validarPregunta(guess["transcription"], listaConexiones, Client_conn)
             empty_socket(Client_conn)
             if not data:
@@ -278,7 +278,7 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
                 print("ERROR: {}".format(guess["error"]))
                 break
             
-            print("La cadena es: " + guess["transcription"])
+            #print("La cadena es: " + guess["transcription"])
             validarPregunta(guess["transcription"], listaConexiones, Client_conn)
             empty_socket(Client_conn)
             if not data:
