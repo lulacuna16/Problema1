@@ -1,18 +1,40 @@
 #!/usr/bin/env python3
 
-import socket
+
 from random import shuffle
-import time
+import time,logging,pyaudio,wave,socket
 import os
 import sys
-import pyaudio
-import wave
 from pathlib import Path
 
-HOST = "localhost"  # The server's hostname or IP address
+HOST = "192.168.1.64"  # The server's hostname or IP address
 PORT = 65432  # The port used by the server
 buffer_size = 1024
 
+################################################################
+#Nombres de los personajes en ingles para que sea facil reconocerlos
+personajes=['batman', 'superman', 'wonder woman', 'flash', 'green lantern', 'lex luthor', 'catwoman', 'joker', 'harley quinn', 'poison ivy']
+#Caracteristicas de cada personaje
+personajesC= [ # Arreglo bidimiensional
+    ["heroe","rico","capa","negro","sabe pelear","hombre","cabello","cabello corto","inteligente","batman"],
+    ["heroe","vuela","super fuerza","visión laser","hombre","capa","cabello","cabello corto","veloz","superman"],
+    ["heroe","vuela","mujer","cabello","cabello largo","super fuerza","lazo","wonder womam"],
+    ["heroe","veloz","hombre","rojo","agil","cabello","cabello corto","flash"],
+    ["heroe","super fuerte","verde","vuela","hombre","cabello","cabello corto","green lantern"],
+    ["villano","rico","hombre","inteligente","calvo","lex luthor"],
+    ["villano","mujer","negro","sabe pelear","cabello","agil","cabello corto","catwoman"],
+    ["villano","hombre","inteligente","payaso","cabello","joker"],
+    ["villano","mujer","cabello","cabello largo","sabe pelear","payaso","agil","harley quinn"],
+    ["villano","mujer","cabello","cabello largo","agil","verde","poison ivy"]
+]
+
+#######################################################################
+def verPersonajes():
+    global personajes,personajesC
+    print("******PERSONAJES******")
+    for i in range(0,len(personajes)):
+       print("{}:\t{}".format(personajes[i],personajesC[i]))
+    print("**********************")
 def GrabarPregunta():
     chunk = 1024 
     sample_format = pyaudio.paInt16  
@@ -53,8 +75,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
     print("Bienvenido a Memoria")
     
     TCPClientSocket.sendall(b" ")
-    data = TCPClientSocket.recv(buffer_size)    
-    
+    data = TCPClientSocket.recv(buffer_size)
+    Jugador=data.decode()
     if(data.decode() == "JH"): #Código para jugador host
         numPlay = input("Ingrese el número de jugadores: \n")
         TCPClientSocket.sendall(numPlay.encode())
@@ -70,18 +92,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
         TCPClientSocket.sendall(b" ")
         data = TCPClientSocket.recv(buffer_size)
         TCPClientSocket.sendall(b" ")   #Prácticamente solo sincroniza los enviar y recibir, si no luego hace cosas raras xD
-        
+
         time.sleep(1)
-    
+
     while True:
         print("Espere su turno: ")
         data = TCPClientSocket.recv(buffer_size)
+        verPersonajes()
         coord=input("Pulse enter para grabar ")
         #TCPClientSocket.sendall(coord.encode())
         ##########################################
         GrabarPregunta()
         TamAud=Path("audio.wav").stat().st_size
-        print(str(TamAud))
+        #print(str(TamAud))
         TCPClientSocket.sendall(str(TamAud).encode())
         with open("audio.wav", 'rb') as f:
           for l in f: 
