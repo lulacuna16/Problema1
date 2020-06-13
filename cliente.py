@@ -2,9 +2,7 @@
 
 
 from random import shuffle
-import time, pyaudio, wave, socket
-import os
-import sys
+import pyaudio, wave, socket,time
 from pathlib import Path
 
 HOST = "192.168.1.64"  # The server's hostname or IP address
@@ -24,7 +22,7 @@ personajesC = [  # Arreglo bidimiensional
     ["héroe", "super fuerza", "verde", "vuela", "hombre", "cabello corto", "green lantern"],
     ["villano", "rico", "hombre", "inteligente", "calvo", "verde","lex luthor"],
     ["villano", "mujer", "negro", "sabe pelear", "cabello corto", "ágil",  "catwoman"],
-    ["villano", "hombre", "inteligente", "payaso", "joker"],
+    ["villano", "hombre", "inteligente", "cabello corto","payaso", "joker"],
     ["villano", "mujer", "cabello largo",  "sabe pelear", "payaso", "ágil", "harley quinn"],
     ["villano", "mujer", "cabello largo", "ágil", "verde", "poison ivy"]
 ]
@@ -125,15 +123,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as TCPClientSocket:
             b" ")  # Prácticamente solo sincroniza los enviar y recibir, si no luego hace cosas raras xD
 
         time.sleep(1)
-
+    print("=======ADIVINA QUIÉN???=======\n")
     while True:
         termina=False
         print("Espere su turno: ")
         data = TCPClientSocket.recv(buffer_size)
+        if data.decode().startswith("Fin"): #Significa que ya hay un ganador
+            print(data.decode()) #Imprimir mensaje del jugador ganador
+            break
         verPersonajes()
         # TCPClientSocket.sendall(coord.encode())
         ##########################################
         while True:
+            print("Debe decir una frase como 'El personaje vuela', 'El personaje es hombre',etc...")
             coord = input("Pulse enter para grabar ")
             GrabarPregunta()
             TamAud = Path("audio.wav").stat().st_size

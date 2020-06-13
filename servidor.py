@@ -1,13 +1,10 @@
 # !/usr/bin/env python3
 
-import socket
+import socket,time
 from random import randint
 import threading
-import time
-import os
-import random
+from time import time
 import select
-import wave
 import speech_recognition as sr
 
 host="192.168.1.64"
@@ -29,7 +26,7 @@ personajesC= [ # Arreglo bidimiensional
     ["héroe", "super fuerza", "verde", "vuela", "hombre", "cabello corto", "green lantern"],
     ["villano", "rico", "hombre", "inteligente", "calvo", "verde","lex luthor"],
     ["villano", "mujer", "negro", "sabe pelear", "cabello corto", "ágil",  "catwoman"],
-    ["villano", "hombre", "inteligente", "payaso", "joker"],
+    ["villano", "hombre", "inteligente", "payaso","cabello corto", "joker"],
     ["villano", "mujer", "cabello largo",  "sabe pelear", "payaso", "ágil", "harley quinn"],
     ["villano", "mujer", "cabello largo", "ágil", "verde", "poison ivy"]
 ]
@@ -80,6 +77,7 @@ def servirPorSiempre(socketTcp, listaconexiones):
             condition.wait() #Espera a que el host notifique que ya obtuvo el numero de jugadores 
         barrier = threading.Barrier(NumPlayers-1) #Se crea la barrera
         while True:
+
             client_conn, client_addr = socketTcp.accept() #Comienza a aceptar las conexiones de los demás jugadores
             print("Conectado a", client_addr)
             semaforoJ = threading.Semaphore(0) #Crea el semaforo de cado jugador
@@ -123,7 +121,7 @@ def validarPregunta(cadena,listaConexiones,Client_conn,Client_addr):
             print(mensaje)
             if personaje in cadena:
                 ganador=Client_addr
-                mensaje="¡¡Felicidades, ganaste Jugador {}!!\n".format(ganador)
+                mensaje="¡¡Felicidades, ganaste Jugador {}!!\nEl personaje es {}\n".format(ganador,personaje)
                 Client_conn.sendall(mensaje.encode())
             else:
                 Client_conn.sendall(mensaje.encode())
@@ -162,7 +160,7 @@ def recibirPregunta(Client_conn):
         "error": None,
         "transcription": None
     }
-    print("Empezando reconociemiento")
+    print("Empezando reconocimiento")
     try:
         response["transcription"] = r.recognize_google(audio,language="es")
     except sr.RequestError:
@@ -171,7 +169,7 @@ def recibirPregunta(Client_conn):
     except sr.UnknownValueError:
         response["error"] = "Unable to recognize speech"
 
-    print("Terminando reconociemiento")
+    print("Terminando reconocimiento")
     return response
 
 def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,listaSemaforos,condSem):
@@ -183,7 +181,7 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
         cur_thread = threading.current_thread()
         #print("Recibiendo datos del cliente {} en el {}\n".format(Client_addr, cur_thread.name))
         
-        print("Conectado a", Client_addr)        
+        print("\nConectado a", Client_addr)
         data = Client_conn.recv(buffer_size)
         #print ("Recibido,", data,"   de ", Client_addr)
         Client_conn.sendall(b"JH") #Manda al cliente el codigo JH jugador host
@@ -197,14 +195,15 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
             cond.notifyAll() #Notifica que ya obtuvo el numero de jugadores
         
         with cond:
-            print("Esperando a otros jugadores")
+            print("\nEsperando a otros jugadores")
             cond.wait() #Espera a que la barrera se haya cumplido. (Le puse la condicion en vez de la barrera xD)
             
-        print("Jugadores listos Continuando..")
+        print("\nJugadores listos Continuando..")
         Client_conn.sendall(b" ")
         data = Client_conn.recv(buffer_size)
 
         while True:
+            Inicio = time()
             semaforo.acquire() # El host adquiere el semaforo
             empty_socket(Client_conn)
             Client_conn.sendall(b" ")
@@ -216,7 +215,7 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
                     break
                 if not guess["success"]:
                     break
-                print("No pude capturar nada. Que fue lo que dijiste?\n")
+                print("\nNo pude capturar nada. Que fue lo que dijiste?\n")
                 Client_conn.sendall(b"*")
                 empty_socket(Client_conn)
                 empty_socket(Client_conn)
@@ -231,7 +230,12 @@ def recibir_datos_host(Client_conn, Client_addr, listaConexiones,cond,semaforo,l
             if not data:
                 break
             if len(ganador)>0:
-                print("Ganó Jugador: {}\n".format(ganador))
+                print("\nGanó Jugador: {}\n".format(ganador)) #Mostrar quién es el jugador ganador
+                Final = time()
+                for c in listaConexiones: #Notificar al resto de jugadores que acabó la partida
+                    if c!=ganador:
+                        c.sendall((("Fin del juego.\nGanó jugador: %s.\nEl personaje es: %s\nDuración de la partida: %.2f") %(ganador,personaje,Final-Inicio)).encode())
+                print("Duración de la partida: %.2f seg"%(Final-Inicio))
                 break
             with condSem:
                 condSem.notifyAll() #Indica al planificador de turnos que ya acabo de usar su semaforo y que continue con el proximo
@@ -247,27 +251,28 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
     PlayerPoints = 0
     try:
         cur_thread = threading.current_thread()
-        print("Recibiendo datos del cliente {} en el {}".format(Client_addr, cur_thread.name))
-        print("Conectado a", Client_addr)     
+        print("\nRecibiendo datos del cliente {} en el {}".format(Client_addr, cur_thread.name))
+        print("\nConectado a", Client_addr)
         
         data = Client_conn.recv(buffer_size)
-        print("El tablero ha sido creado por otro usuario")
+        print("\nEl tablero ha sido creado por otro usuario")
         #ETC: Error, tablero creado
         Client_conn.sendall(b"ETC") #Indica al cliente que sera tratado como un jugador no host
         data = Client_conn.recv(buffer_size)
         
         #Espera a que se cumpla la barrera
-        print(threading.current_thread().name,
+        print("\n"+threading.current_thread().name,
           'Esperando en la barrera con {} hilos más'.format(barrier.n_waiting))
         worker_id = barrier.wait()
         
         with cond:
             cond.notifyAll() #Notifica al host que la barrera ya se ha cumplido
-            
+
         Client_conn.sendall(b" ") 
         data = Client_conn.recv(buffer_size)
         
         while True:
+            Inicio=time()
             semaforo.acquire() # El host adquiere el semaforo
             empty_socket(Client_conn)
             Client_conn.sendall(b" ")
@@ -285,7 +290,7 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
                 empty_socket(Client_conn)
             
             if guess["error"]:
-                print("ERROR: {}".format(guess["error"]))
+                print("\nERROR: {}".format(guess["error"]))
                 break
             
             #print("La cadena es: " + guess["transcription"])
@@ -293,8 +298,13 @@ def recibir_datos(Client_conn, Client_addr, listaConexiones,barrier,cond,semafor
             empty_socket(Client_conn)
             if not data:
                 break
-            if len(ganador)>0:
-                print("Ganó Jugador: {}\n".format(ganador))
+            if len(ganador)>0: #Si ya hay un ganador
+                print("Ganó Jugador: {}\n".format(ganador)) #Mostrar quién es
+                Final=time()
+                for c in listaConexiones: #notificar al resto de los jugadores que la partida terminó
+                    if c!=ganador:
+                        c.sendall((("Fin del juego.\nGanó jugador: %s.\nEl personaje es: %s\nDuración de la partida: %.2f seg") % (ganador, personaje, Final - Inicio)).encode())
+                print("Duración de la partida: %.2f seg" % (Final - Inicio))
                 break
             with condSem:
                 condSem.notifyAll() #Indica al planificador de turnos que ya acabo de usar su semaforo y que continue con el proximo
